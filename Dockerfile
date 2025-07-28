@@ -1,6 +1,19 @@
 # Build stage
 FROM golang:1.21 AS builder
 
+# Install build dependencies for X11 and OpenGL
+RUN apt-get update && apt-get install -y \
+    libx11-dev \
+    libxrandr-dev \
+    libxinerama-dev \
+    libxcursor-dev \
+    libxi-dev \
+    libxxf86vm-dev \
+    libgl1-mesa-dev \
+    libglu1-mesa-dev \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 # Copy go mod files first for better caching

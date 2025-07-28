@@ -58,6 +58,12 @@ func NewGame() *Game {
 }
 
 func (g *Game) Update() error {
+	// Handle restart
+	if g.gameOver && ebiten.IsKeyPressed(ebiten.KeySpace) {
+		*g = *NewGame()
+		return nil
+	}
+
 	if g.gameOver {
 		return nil
 	}
@@ -157,7 +163,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	text.Draw(screen, scoreText, basicfont.Face7x13, 10, 30, color.White)
 
 	if g.gameOver {
-		gameOverText := "Game Over! Press R to restart"
+		gameOverText := "Game Over! Press Space to restart"
 		text.Draw(screen, gameOverText, basicfont.Face7x13, ScreenWidth/2-100, ScreenHeight/2, color.White)
 	}
 }
@@ -170,16 +176,9 @@ func main() {
 	rand.Seed(time.Now().UnixNano())
 
 	ebiten.SetWindowSize(ScreenWidth, ScreenHeight)
-	ebiten.SetWindowTitle("Flappy Bird Clone")
+	ebiten.SetWindowTitle("Flappy Bird")
 
 	game := NewGame()
-
-	// Handle restart
-	ebiten.SetKeyCallback(func(key ebiten.Key) {
-		if key == ebiten.KeyR && game.gameOver {
-			*game = *NewGame()
-		}
-	})
 
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
