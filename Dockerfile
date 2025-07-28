@@ -1,22 +1,10 @@
 # Build stage
-FROM golang:1.21-alpine AS builder
-
-# Install required system dependencies for Ebiten
-RUN apk add --no-cache \
-    gcc \
-    musl-dev \
-    git \
-    xvfb \
-    libx11-dev \
-    libxrandr-dev \
-    libxinerama-dev \
-    libxcursor-dev \
-    libxi-dev
+FROM golang:1.21 AS builder
 
 WORKDIR /app
 
-# Copy go mod files
-COPY go.mod go.sum* ./
+# Copy go mod files first for better caching
+COPY go.mod ./
 
 # Download dependencies
 RUN go mod download
@@ -28,17 +16,18 @@ COPY . .
 RUN CGO_ENABLED=1 GOOS=linux go build -o flappy-bird .
 
 # Runtime stage
-FROM alpine:latest
+FROM ubuntu:22.04
 
 # Install runtime dependencies
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y \
+    libx11-6 \
+    libxrandr2 \
+    libxinerama1 \
+    libxcursor1 \
+    libxi6 \
     xvfb \
-    libx11 \
-    libxrandr \
-    libxinerama \
-    libxcursor \
-    libxi \
-    ca-certificates
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -46,17 +35,13 @@ WORKDIR /app
 COPY --from=builder /app/flappy-bird .
 
 # Create a non-root user
-RUN addgroup -g 1001 -S appgroup && \
-    adduser -u 1001 -S appuser -G appgroup
+RUN groupadd -r appuser && useradd -r -g appuser appuser
 
 # Change ownership of the app directory
-RUN chown -R appuser:appgroup /app
+RUN chown -R appuser:appuser /app
 
 # Switch to non-root user
 USER appuser
-
-# Expose port (if needed for future web version)
-EXPOSE 8080
 
 # Run the game
 CMD ["./flappy-bird"] 
